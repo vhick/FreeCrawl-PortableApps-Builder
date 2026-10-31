@@ -1,0 +1,27 @@
+1 ICON "@FREECRAWL_ICON_RC@"
+1 VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+ BLOCK "StringFileInfo"
+ BEGIN
+  BLOCK "040904B0"
+  BEGIN
+   VALUE "CompanyName", "Independent portable packaging (vhick)\0"
+   VALUE "FileDescription", "FreeCrawl Portable launcher\0"
+   VALUE "FileVersion", "1.0.0.1\0"
+   VALUE "InternalName", "FreeCrawlPortable\0"
+   VALUE "OriginalFilename", "FreeCrawlPortable.exe\0"
+   VALUE "ProductName", "FreeCrawl SEO Tool Portable\0"
+  END
+ END
+ BLOCK "VarFileInfo"
+ BEGIN
+  VALUE "Translation", 0x0409, 1200
+ END
+END
