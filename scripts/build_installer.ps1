@@ -1,5 +1,5 @@
 # Build a genuine PortableApps.com installer with the UNMODIFIED official installer tool.
-# All downloads are SHA-256 verified; no hidden PowerShell or execution-policy bypasses.
+# The verified official tool is downloaded by acquire_installer.ps1; no encoded or hidden scripts.
 param(
     [Parameter(Mandatory=$true)][string]$Version,
     [Parameter(Mandatory=$true)][string]$Revision
@@ -17,28 +17,26 @@ $dist = Join-Path (Get-Location).Path 'dist'
 if (-not (Test-Path (Join-Path $stage 'App\AppInfo\appinfo.ini'))) { throw 'PortableApps staging folder is missing' }
 New-Item -ItemType Directory -Path $toolHome, $toolInstallParent, $dist -Force | Out-Null
 
-$urls = @(
-    "https://downloads.sourceforge.net/project/portableapps/PortableApps.com%20Installer/$toolName?download",
-    "https://sourceforge.net/projects/portableapps/files/PortableApps.com%20Installer/$toolName/download"
-)
-$verified = $false
-foreach ($url in $urls) {
-    try {
-        Write-Host "Downloading official PortableApps.com Installer $toolVersion"
-        Invoke-WebRequest -Uri $url -OutFile $toolDownload -MaximumRedirection 10 -TimeoutSec 120 -ErrorAction Stop
-        $actual = (Get-FileHash -LiteralPath $toolDownload -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($actual -ne $expectedSha256) {
-            Write-Warning "Downloaded file failed publisher checksum verification (SHA256=$actual)."
-            Remove-Item -LiteralPath $toolDownload -Force
-            continue
-        }
-        $verified = $true
-        break
-    } catch {
-        Write-Warning "Official download mirror failed: $($_.Exception.Message)"
-    }
+# The tool is downloaded in an EARLY workflow step, before expensive compilation.
+# Recheck the exact published SourceForge checksum before executing the downloaded EXE.
+# Do not silently accept a file with a different hash, even if it has a valid PE header.
+if (-not (Test-Path -LiteralPath $toolDownload -PathType Leaf)) {
+    throw "Verified official installer tool missing: $toolDownload. Run scripts/acquire_installer.ps1 first."
 }
-if (-not $verified) { throw "Unable to obtain official $toolName with the verified SHA-256 hash. No installer was built." }
+$toolHash = (Get-FileHash -LiteralPath $toolDownload -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($toolHash -ne $expectedSha256) {
+    throw "Official installer checksum mismatch. Expected $expectedSha256, got $toolHash."
+}
+$toolStream = [System.IO.File]::OpenRead($toolDownload)
+try {
+    if ($toolStream.Length -lt 100000) { throw 'Official installer download is unexpectedly small.' }
+    if ($toolStream.ReadByte() -ne 0x4d -or $toolStream.ReadByte() -ne 0x5a) {
+        throw 'Official installer is not a Windows executable (MZ header missing).'
+    }
+} finally {
+    $toolStream.Dispose()
+}
+Write-Host "Verified official PortableApps.com Installer $toolVersion (SHA-256 $toolHash)."
 
 # Official NSIS package: silent-bootstrap the installer TOOL to a temporary directory.
 # The /D= destination must be the final parameter and an unquoted directory without spaces.

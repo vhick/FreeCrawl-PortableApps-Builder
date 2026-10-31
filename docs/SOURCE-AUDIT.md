@@ -29,7 +29,7 @@ Snapshot reviewed: **upstream stable tag `v1.1.1`** (public release dated Octobe
 * OAuth and integrations using OS-protected credentials can be account/machine-bound. We do not attempt password extraction or risky registry manipulation.
 * Source-backed Windows registry keys for user settings were **not confirmed** by the inspected application main/configuration paths. Do not assume nonexistent or invent HKCU/HKLM paths.
 * The upstream prebuilt release might contain other assets/dependencies. Our source build uses npm-lockfile versions and the project's Electron Builder configuration, not its prebuilt executable.
-* Revision r2 adds authentic `.paf.exe` generation through the checksum-verified PortableApps.com Installer 3.9.22, plus simulated clean-install and upgrade tests on the Windows runner. This is an independent build and is not PortableApps.com-certified. The selected user-owned publisher must have new PAF support pushed to GitHub, as the public v1.0.1 ref remains ZIP-only.
+* Revision r2 adds authentic `.paf.exe` generation through the checksum-verified PortableApps.com Installer 3.9.22, plus simulated clean-install and upgrade tests on the Windows runner. This is an independent build and is not PortableApps.com-certified. Publisher support is supplied by your tagged v1.1.1 release; earlier v1.0.1 is intentionally left unchanged.
 
 ## Source reference URLs
 
@@ -43,3 +43,5 @@ Snapshot reviewed: **upstream stable tag `v1.1.1`** (public release dated Octobe
 - https://raw.githubusercontent.com/kemalai/FreeCrawl-SEO-Tool/v1.1.1/LICENSE
 - https://raw.githubusercontent.com/vhick/portable-release-publisher/v1.0.1/action.yml
 - https://raw.githubusercontent.com/vhick/portable-release-publisher/v1.0.1/scripts/publish.py
+
+* Revision r3 retains the r2 packaging design, switches to the tagged publisher v1.1.1 by default, and downloads the official installer before compilation using verified SourceForge mirrors. The published SHA-256 remains pinned.

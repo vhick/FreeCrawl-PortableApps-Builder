@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       publisher_ref:
-        description: 'Tag or branch with VERIFIED PAF support in vhick/portable-release-publisher (use a new immutable tag when available)'
+        description: 'Verified tag of PAF-enabled vhick/portable-release-publisher (v1.1.1)'
         required: true
         type: string
-        default: 'main'
+        default: 'v1.1.1'
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 100
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILDER_REV: '2'
+      BUILDER_REV: '3'
       PLAYWRIGHT_SKIP_BROWSER_INSTALL: '1'
       BUNDLE_PLAYWRIGHT: '0'
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -64,6 +64,11 @@ jobs:
           python scripts/check_publisher.py
           if ($LASTEXITCODE -ne 0) { throw 'Selected publisher is not PAF-capable' }
           git -C .publisher rev-parse HEAD
+
+      - name: Acquire checksum-verified official installer before compiling
+        if: steps.existing.outputs.skip_build != 'true'
+        shell: pwsh
+        run: ./scripts/acquire_installer.ps1
 
       - name: Retrieve exact stable upstream tag without a fork
         if: steps.existing.outputs.skip_build != 'true'
@@ -153,7 +158,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r2)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r3)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'true'
@@ -167,7 +172,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r2)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r3)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'false'
