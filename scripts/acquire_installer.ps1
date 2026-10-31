@@ -25,7 +25,23 @@ $mirrors = @(
     'downloads.sourceforge.net'
 )
 $path = "project/portableapps/PortableApps.com%20Installer/$toolName"
-$curl = Get-Command curl.exe -CommandType Application -ErrorAction Stop
+# Windows has a built-in curl.exe. Resolve ONE full filesystem path rather than
+# using Get-Command results directly: both the Windows and Git for Windows copies
+# may be returned as an array on a hosted runner. An array expanded by the call
+# operator (&) becomes one invalid command containing both paths.
+$curlExe = Join-Path $env:WINDIR 'System32\curl.exe'
+if (-not (Test-Path -LiteralPath $curlExe -PathType Leaf)) {
+    # Only use the first application when the documented Windows copy is absent.
+    $curlCommand = Get-Command -Name curl.exe -All -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    if ($null -eq $curlCommand) { throw 'No curl.exe application found.' }
+    $curlExe = [string]$curlCommand.Source
+}
+if ([string]::IsNullOrWhiteSpace($curlExe) -or -not (Test-Path -LiteralPath $curlExe -PathType Leaf)) {
+    throw "Cannot locate the selected curl.exe executable: $curlExe"
+}
+Write-Host "Downloader executable: $curlExe"
+& $curlExe --version
+if ($LASTEXITCODE -ne 0) { throw "curl.exe self-check failed ($LASTEXITCODE)" }
 $success = $false
 foreach ($mirror in $mirrors) {
     if ($mirror -notmatch '^(?:[a-z0-9-]+\.dl|downloads)\.sourceforge\.net$') {
@@ -37,7 +53,7 @@ foreach ($mirror in $mirrors) {
     try {
         # curl.exe follows actual download redirects and supports reliable retry/timeouts.
         # No Powershell aliases, hidden windows, external download managers, or policy bypasses.
-        & $curl.Source --fail --location --silent --show-error --retry 2 --retry-delay 2 --connect-timeout 15 --max-time 120 --output $destination $url
+        & $curlExe --fail --location --silent --show-error --retry 2 --retry-delay 2 --connect-timeout 15 --max-time 120 --output $destination $url
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "Mirror $mirror returned curl exit code $LASTEXITCODE."
             continue
@@ -77,5 +93,5 @@ foreach ($mirror in $mirrors) {
 }
 if (-not $success) {
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Force }
-    throw 'No official SourceForge mirror returned the checksum-verified installer tool. SourceForge may be blocking automated requests. Build stopped safely before compilation; do NOT disable verification.'
+    throw 'No official SourceForge mirror returned a checksum-verified installer tool. Check HTTP failures and checksum warnings above. Build stopped safely before compilation; do NOT disable verification.'
 }

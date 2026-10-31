@@ -29,7 +29,7 @@ def main():
     # Never pass an unvalidated tag to shell commands.
     if not STABLE.fullmatch(tag):
         raise RuntimeError('Unsafe upstream tag')
-    rev=os.environ.get('BUILDER_REV','3')
+    rev=os.environ.get('BUILDER_REV','4')
     if not re.fullmatch(r'[1-9][0-9]*',rev):
         raise RuntimeError('BUILDER_REV must be a positive integer')
     output_tag=f'portable-freecrawl-v{version}-r{rev}'

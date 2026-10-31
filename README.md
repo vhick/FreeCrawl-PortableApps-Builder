@@ -1,4 +1,4 @@
-# FreeCrawl SEO Tool — PortableApps Builder r3 (ZIP + genuine PAF)
+# FreeCrawl SEO Tool — PortableApps Builder r4 (ZIP + genuine PAF)
 
 **PORTABLEAPPS mode.** This independent builder compiles FreeCrawl from the original stable release and produces BOTH a ready-to-extract PortableApps ZIP **and** a genuine `.paf.exe` built using the official PortableApps.com Installer. It builds one copy of Electron and one genuine native Windows x64 launcher, shared by both packages.
 
@@ -19,11 +19,11 @@ Your **v1.0.1** publisher tag is preserved for older builders, and this kit neve
 
 Example if upstream stable is v1.1.1:
 
-- `FreeCrawlPortable_v1.1.1_r3_win64.zip`
-- `FreeCrawlPortable_v1.1.1_r3_win64.paf.exe`
+- `FreeCrawlPortable_v1.1.1_r4_win64.zip`
+- `FreeCrawlPortable_v1.1.1_r4_win64.paf.exe`
 - `SHA256SUMS.txt` (written by the shared publisher, covering BOTH files)
 
-GitHub release tag: `portable-freecrawl-v1.1.1-r3` (app version auto-resolved; revision is this builder's r3, NOT the publisher's release version).
+GitHub release tag: `portable-freecrawl-v1.1.1-r4` (app version auto-resolved; revision is this builder's r4, NOT the publisher's release version).
 
 Each contains a Windows `FreeCrawlPortable.exe` **compiled from ordinary C++**, a complete unpacked Electron app, valid PortableApps metadata, the upstream icon, and preserved license information. The app directory is:
 
@@ -51,26 +51,26 @@ The official `.paf.exe` installs and updates this layout. `App/AppInfo/installer
 1. Download and extract this ZIP **builder kit** on Windows. Make sure you see `.github`, `scripts`, `launcher`, `docs`, and `README.md` in the extracted directory.
 2. In GitHub Desktop, choose **File → New repository**, name it `FreeCrawl-PortableApps-Builder`, and select your intended local folder. Click **Create repository**.
 3. Open that repository's local folder from GitHub Desktop. Copy the **contents** of the extracted builder ZIP into the repository folder. Do not place the entire extracted folder as a subfolder; `.github/workflows/build-portableapps.yml` must be in the repository root hierarchy.
-4. Return to GitHub Desktop. Enter summary `FreeCrawl PortableApps ZIP and PAF builder r3`, then **Commit to main**.
+4. Return to GitHub Desktop. Enter summary `FreeCrawl PortableApps ZIP and PAF builder r4`, then **Commit to main**.
 5. Click **Publish repository**. Choose **Private** if you want private GitHub Releases or **Public** if you want publicly accessible releases. The builder will never change that visibility.
 6. On GitHub, go to your repository **Settings → Actions → General** and allow Actions/workflow runs. In **Workflow permissions**, allow read and write if required for release creation. The job explicitly declares `contents: write`.
 7. Ensure your **shared publisher v1.1.1** is available and supports both ZIP and `.paf.exe`. This revision defaults to the tagged `v1.1.1`, not `main`.
 8. Go to **Actions → Build FreeCrawl PortableApps ZIP and PAF Installer → Run workflow**. Enter your actual PAF-enabled `publisher_ref` (`v1.1.1` by default).
-9. After a **successful** workflow run, go to the builder repository's **Releases** and open the `portable-freecrawl-...-r3` entry. Download the `.paf.exe` (recommended) or the ZIP (manual extraction). Verify against `SHA256SUMS.txt` if desired.
+9. After a **successful** workflow run, go to the builder repository's **Releases** and open the `portable-freecrawl-...-r4` entry. Download the `.paf.exe` (recommended) or the ZIP (manual extraction). Verify against `SHA256SUMS.txt` if desired.
 
-### If you already created the r1 or r2 builder repository
+### If you already created an r1, r2, or r3 builder repository
 
-You do **not** need a new repository. Download/extract this r3 kit, replace the previous builder's workflow/scripts/README files, leave your existing `.git` folder alone, then **Commit to main → Push origin** using GitHub Desktop. This bumps package release tags to `r3`; old r1/r2 releases are not overwritten.
+You do **not** need a new repository. Download/extract this r4 kit, replace the previous builder's workflow/scripts/README files, leave your existing `.git` folder alone, then **Commit to main → Push origin** using GitHub Desktop. This bumps package release tags to `r4`; old r1/r2/r3 releases are not overwritten.
 
 ## Install from the official-format `.paf.exe` (recommended)
 
 1. In PortableApps Menu, select **Apps → Install a New App**.
-2. Select the new `FreeCrawlPortable_v..._r3_win64.paf.exe` file.
+2. Select the new `FreeCrawlPortable_v..._r4_win64.paf.exe` file.
 3. Follow the installation prompts, selecting the existing PortableApps directory if necessary.
 4. Refresh PortableApps Menu if it does not appear immediately.
 5. Run **FreeCrawl SEO Tool Portable**. It starts `FreeCrawlPortable.exe` and stores settings and databases under `FreeCrawlPortable\Data\Profile`.
 
-For updates, **fully exit FreeCrawl first**, back up the existing `Data` directory, and run the newer `.paf.exe` installer against the same PortableApps parent folder. The installer should leave `Data` intact; r3 also tests this automatically on a disposable Windows runner. The real user should back up important `.seoproject` SQLite databases as a precaution.
+For updates, **fully exit FreeCrawl first**, back up the existing `Data` directory, and run the newer `.paf.exe` installer against the same PortableApps parent folder. The installer should leave `Data` intact; r4 also tests this automatically on a disposable Windows runner. The real user should back up important `.seoproject` SQLite databases as a precaution.
 
 ### Install from the ZIP
 
@@ -123,7 +123,7 @@ The GitHub workflow fails rather than releasing a missing or invalid file.
 
 **`Selected publisher is not PAF-capable`:** The publicly accessible ref is still ZIP-only. Push your updates to `vhick/portable-release-publisher`, create a new immutable tag, and rerun the workflow choosing that tag. **Do not retag v1.0.1.**
 
-**`No official SourceForge mirror returned the checksum-verified installer tool`:** SourceForge may be serving HTML download/challenge pages to automated requests or a mirror may be down. The r3 builder tries multiple direct official SourceForge mirrors *before compilation*. It rejects incorrect downloads and stops rather than bypassing security. Check `scripts/acquire_installer.ps1` output. If SourceForge is blocking all official mirrors, retry later; do not replace the pinned hash with a downloaded HTML page hash.
+**`No official SourceForge mirror returned the checksum-verified installer tool`:** SourceForge may be serving HTML download/challenge pages to automated requests or a mirror may be down. The r4 builder tries multiple direct official SourceForge mirrors *before compilation*. It rejects incorrect downloads and stops rather than bypassing security. Check `scripts/acquire_installer.ps1` output. If SourceForge is blocking all official mirrors, retry later; do not replace the pinned hash with a downloaded HTML page hash.
 
 **`Expected one ... installer.exe` or `.paf.exe` output not found`:** PortableApps.com's tool changed its extraction structure or detected invalid app metadata. Examine the `Build authentic PAF` step and its installer log, if present. Do not substitute a ZIP renamed `.paf.exe`.
 
@@ -154,3 +154,23 @@ The previous r2 failed in **step 15**, before publishing, because SourceForge re
 The patched workflow and downloader have undergone static review. A successful download and official PAF installation still require an actual GitHub Actions Windows run. This script deliberately fails safely if all official mirrors are blocked rather than falsely claiming a completed `.paf.exe`.
 
 **Official checksum evidence:** https://sourceforge.net/projects/portableapps/files/PortableApps.com%20Installer/PortableApps.comInstaller_3.9.22.paf.exe/download (SHA-256 `689456f1fb1320c45e82a077afe6b87fb388fd3f75c41d9ee9ce8d45f3966b67`).
+
+
+## r4 fix (2026-10-31): Windows curl.exe discovery
+
+The r3 workflow failed **before downloading anything** because PowerShell resolved
+both `C:\Windows\system32\curl.exe` and `C:\Program Files\Git\ucrt64\bin\curl.exe`.
+Calling the combined `.Source` string caused `The term ... is not recognized` for every
+mirror. This was a builder scripting bug, not evidence of a SourceForge outage.
+
+r4 uses the explicit Windows system curl executable, or (only if missing) the
+**first** discovered application; it tests `--version` and logs the chosen path.
+It retains all original mirror retries, file-size screening, official SHA-256
+verification, and PortableApps installer install/upgrade tests. The publishing
+action remains `vhick/portable-release-publisher` at **v1.1.1** by default.
+The release tag revision becomes **r4**, leaving existing releases unchanged.
+
+**Validation limitation:** r4 has been checked for Python/YAML syntax, archive
+integrity, and the specific multi-executable selection error. Its download and
+Windows GUI installer execution have not been run in this Linux-based environment.
+A live GitHub Actions run must still verify those steps. No signing is added.
