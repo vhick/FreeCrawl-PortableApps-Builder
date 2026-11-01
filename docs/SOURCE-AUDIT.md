@@ -50,3 +50,7 @@ Snapshot reviewed: **upstream stable tag `v1.1.1`** (public release dated Octobe
 
 
 r5: Bootstrapping vendor Installer .paf.exe under /S /D hung headless Windows CI on 2026-10-31. Use 7-Zip extraction of verified archive; do not modify official packager.
+
+## Revision r6: output discovery and clearly disclosed fallback
+
+The r5 GitHub Actions log (2026-11-01) verified the official tool archive and then ran the vendor packager for about four minutes. Its exit status did not produce a filename matching the r5 script's hard-coded `stage/FreeCrawlPortable_*.paf.exe` search. That error does **not** prove the packager did not generate a file; the generated name may be derived from the `[Details] Name` field or written to another directory. r6 now inspects newly generated PAF files in scoped output locations, checks Windows PE signatures, and inspects the embedded FreeCrawl launcher and `appinfo.ini` before accepting an output. No matches or an unconfirmed official result trigger a separate, visibly disclosed NSIS-built installer; this is not official PortableApps.com Installer output or certification. Both variants must pass real Windows clean install and upgrade data-preservation tests. The already-working Electron compilation and native EXE launcher are unchanged.

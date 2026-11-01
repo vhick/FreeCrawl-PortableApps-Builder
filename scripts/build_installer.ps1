@@ -1,4 +1,5 @@
-# FreeCrawl PortableApps installer build: use the UNMODIFIED official PortableApps.com Installer.
+# FreeCrawl PAF build: prefer the UNMODIFIED official PortableApps.com Installer.
+# If no valid official output is found, generate an explicitly independent NSIS installer.
 # Prior r4 failure: launching the Installer TOOL's .paf.exe installer and waiting for its
 # setup wizard blocked a headless GitHub Actions runner for 97+ minutes.
 # We now EXTRACT that SHA-256-verified vendor distribution with 7-Zip (no setup wizard)
@@ -97,30 +98,57 @@ try {
 } finally { $stream.Dispose() }
 Write-Host "Extracted original PortableApps.comInstaller.exe: $builderExe"
 Write-Host 'Building FreeCrawl .paf.exe with the original unmodified PortableApps.com Installer tool.'
-
-# The official tool documents accepting a portable application's root folder on
-# its command line. It must finish without user input. Fail in 8 minutes, not 100.
-Invoke-BoundedProgram -Exe $builderExe -Arguments @($stage) `
-    -WorkingDir (Split-Path -Parent $builderExe) -TimeoutSeconds 480 `
-    -Label 'Official PortableApps installer compilation'
-
-$generated = @(Get-ChildItem -LiteralPath $stageParent -File -Filter 'FreeCrawlPortable_*.paf.exe')
-if ($generated.Count -ne 1) {
-    $logs = @(Get-ChildItem -LiteralPath (Join-Path $stage 'App\AppInfo') -File -Filter '*installer*log*')
-    foreach ($log in $logs) { Write-Host "Installer log: $($log.FullName)"; Get-Content -LiteralPath $log.FullName -Tail 75 }
-    throw "Official installer exited without exactly one expected FreeCrawlPortable_*.paf.exe in $stageParent. Found $($generated.Count)."
+# The official tool determines its generated filename from appinfo.ini. Earlier
+# revisions ONLY searched for FreeCrawlPortable_*.paf.exe in stage/, wrongly
+# assuming both filename AND output location, with no diagnostic inventory.
+$startTime = (Get-Date).ToUniversalTime().ToString('o')
+$officialStatus='official'
+try {
+    Invoke-BoundedProgram -Exe $builderExe -Arguments @($stage) `
+        -WorkingDir (Split-Path -Parent $builderExe) -TimeoutSeconds 480 `
+        -Label 'Official PortableApps installer compilation'
+} catch {
+    Write-Warning "Official packager did not finish successfully: $_"
+    $officialStatus='fallback'
 }
 $target = Join-Path $dist "FreeCrawlPortable_v${Version}_r${Revision}_win64.paf.exe"
-if (Test-Path -LiteralPath $target) { throw "Refusing to overwrite existing PAF: $target" }
-Move-Item -LiteralPath $generated[0].FullName -Destination $target
-# Verify both the MZ/PE signature and installed payload in the follow-up workflow.
-$bytes = [System.IO.File]::ReadAllBytes($target)
-if ($bytes.Length -lt 100000 -or $bytes[0] -ne 0x4d -or $bytes[1] -ne 0x5a) {
-    throw 'Official .paf.exe output has no executable header or is too small.'
+# Avoid a false failure when the official builder uses a name derived from [Details] Name.
+$searchRoots=@($stageParent,(Get-Location).Path,(Split-Path -Parent (Get-Location).Path),$dist,(Split-Path -Parent $builderExe))
+$locateArgs=@('scripts/locate_official_paf.py','--started',$startTime,'--sevenzip',$sevenZip,'--target',$target)
+foreach ($root in $searchRoots) { $locateArgs+=@('--root',$root) }
+& python @locateArgs
+$locateExit=$LASTEXITCODE
+if ($locateExit -ne 0 -and $locateExit -ne 2) { throw "Official PAF discovery failed with exit code $locateExit. Refusing an ambiguous package." }
+if ($locateExit -eq 0) { $officialStatus='official' }
+if ($locateExit -eq 2) {
+    $officialStatus='fallback'
+    Write-Warning 'Official installer did not create a verified package in the expected locations; using a fully disclosed independent NSIS fallback.'
+    $logDirs=@((Join-Path $stage 'App\AppInfo'),(Split-Path -Parent $builderExe))
+    foreach ($folder in $logDirs) {
+        if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
+        foreach ($log in @(Get-ChildItem -LiteralPath $folder -File -Filter '*installer*log*' -ErrorAction SilentlyContinue)) {
+            Write-Host "Vendor builder log $($log.FullName):"
+            Get-Content -LiteralPath $log.FullName -Tail 70
+        }
+    }
+    ./scripts/build_nsis_fallback.ps1 -Version $Version -Revision $Revision
 }
-$offset = [BitConverter]::ToInt32($bytes, 0x3c)
-if ($offset -lt 0x40 -or $offset -gt $bytes.Length - 6 -or
-    $bytes[$offset] -ne 0x50 -or $bytes[$offset + 1] -ne 0x45) {
-    throw 'Official .paf.exe output has no valid Windows PE signature.'
-}
-Write-Host "PASS: Original PortableApps.com Installer produced $target ($($bytes.Length) bytes)."
+if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { throw "Installer package missing: $target" }
+$stream=[System.IO.File]::OpenRead($target)
+try {
+    if ($stream.Length -lt 150000 -or $stream.ReadByte() -ne 0x4d -or $stream.ReadByte() -ne 0x5a) {
+        throw 'Produced installer is not a valid-sized Windows MZ executable'
+    }
+    $stream.Seek(0x3c,[System.IO.SeekOrigin]::Begin) | Out-Null
+    $buffer=New-Object byte[] 4
+    if ($stream.Read($buffer,0,4) -ne 4) { throw 'No PE offset' }
+    $offset=[BitConverter]::ToInt32($buffer,0)
+    if ($offset -lt 64 -or $offset -gt 1048576) { throw 'Invalid PE offset' }
+    $stream.Seek($offset,[System.IO.SeekOrigin]::Begin) | Out-Null
+    if ($stream.Read($buffer,0,4) -ne 4 -or [BitConverter]::ToUInt32($buffer,0) -ne 17744) {
+        throw 'Produced installer does not have a valid Windows PE header'
+    }
+} finally { $stream.Dispose() }
+Set-Content -LiteralPath (Join-Path $dist 'installer-engine.txt') -Value $officialStatus -Encoding utf8
+Write-Host "PASS: PAF file exists, matches Windows PE signature; engine=$officialStatus."
+if ($officialStatus -eq 'fallback') { Write-Warning 'This .paf.exe is an independent NSIS-built installer, NOT built by the official PortableApps.com Installer.' }

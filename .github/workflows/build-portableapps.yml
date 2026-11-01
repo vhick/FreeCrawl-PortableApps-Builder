@@ -18,12 +18,12 @@ concurrency:
 
 jobs:
   package:
-    name: Build, install-test, and publish ZIP + official PAF
+    name: Build, install-test, and publish ZIP + PAF
     runs-on: windows-2022
     timeout-minutes: 35
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILDER_REV: '5'
+      BUILDER_REV: '6'
       PLAYWRIGHT_SKIP_BROWSER_INSTALL: '1'
       BUNDLE_PLAYWRIGHT: '0'
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -65,7 +65,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Selected publisher is not PAF-capable' }
           git -C .publisher rev-parse HEAD
 
-      - name: Verify downloader selection and checksum guards (r5)
+      - name: Verify downloader selection and checksum guards (r6)
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
         run: |
@@ -73,6 +73,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Downloader checks failed' }
           python scripts/test_installer_guard.py
           if ($LASTEXITCODE -ne 0) { throw 'Installer checks failed' }
+          python scripts/test_locator.py
+          if ($LASTEXITCODE -ne 0) { throw 'Official PAF locator tests failed' }
 
       - name: Acquire checksum-verified official installer before compiling
         if: steps.existing.outputs.skip_build != 'true'
@@ -138,10 +140,19 @@ jobs:
           python scripts/package.py --version '${{ steps.source.outputs.upstream_version }}' --commit "$env:UPSTREAM_SHA" --revision $env:BUILDER_REV
           if ($LASTEXITCODE -ne 0) { throw 'ZIP packaging failed' }
 
-      - name: Build authentic PAF by extracting verified official tool (no GUI bootstrap)
+      - name: Build PAF with official tool and verified independent NSIS fallback
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
         run: ./scripts/build_installer.ps1 -Version '${{ steps.source.outputs.upstream_version }}' -Revision $env:BUILDER_REV
+
+      - name: Report actual installer engine (do not call NSIS fallback official)
+        if: steps.existing.outputs.skip_build != 'true'
+        shell: pwsh
+        run: |
+          $engine=(Get-Content dist/installer-engine.txt -Raw).Trim()
+          Write-Host "Generated PAF engine: $engine"
+          if ($engine -notin @('official','fallback')) { throw 'Unexpected installer engine or missing report.' }
+          if ($engine -eq 'fallback') { Write-Warning 'This PAF was independently built with NSIS. It is not an official PA.c installer or certified distribution.' }
 
       - name: Validate PortableApps ZIP and genuine Windows executables
         if: steps.existing.outputs.skip_build != 'true'
@@ -153,7 +164,7 @@ jobs:
         shell: pwsh
         run: ./scripts/smoke.ps1 -ZipPath 'dist/${{ steps.source.outputs.package_name }}'
 
-      - name: Install and upgrade official PAF in throwaway folder; preserve Data
+      - name: Install and upgrade generated PAF in throwaway folder; preserve Data
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
         run: ./scripts/verify_installer.ps1 -Installer 'dist/${{ steps.source.outputs.paf_name }}' -Version '${{ steps.source.outputs.upstream_version }}'
@@ -167,7 +178,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r5)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r6)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'true'
@@ -181,7 +192,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r5)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r6)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'false'

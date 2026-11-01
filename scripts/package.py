@@ -115,7 +115,7 @@ Start=FreeCrawlPortable.exe
     meta={'upstream_repo':'https://github.com/kemalai/FreeCrawl-SEO-Tool',
           'upstream_version':a.version,'upstream_commit':a.commit,
           'builder_revision':a.revision,'upstream_license':'MIT',
-          'package_type':'independent PortableApps ZIP plus genuine PortableApps.com Installer-generated PAF; not certified',
+          'package_type':'independent PortableApps ZIP and separately generated PAF; official builder preferred, independent NSIS fallback possible; not certified',
           'data_location':'Data/Profile (application profile); Data/Cache, Data/Temp',
           'launcher':'Compiled Windows x64 C++ launcher'}
     (notices/'BUILD-INFO.json').write_text(json.dumps(meta,indent=2)+'\n',encoding='utf-8')
