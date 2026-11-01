@@ -56,7 +56,7 @@ def main():
         installer=configparser.ConfigParser(interpolation=None)
         installer.read_string(z.read(ROOT+'App/AppInfo/installer.ini').decode('utf-8'))
         assert installer.get('MainDirectories','RemoveAppDirectory')=='true'
-        assert not installer.has_option('MainDirectories','RemoveDataDirectory')
+        assert installer.get('MainDirectories','RemoveDataDirectory').lower()=='false'
         assert cfg.get('Version','DisplayVersion').startswith(a.version+' ')
         for member in names:
             if member.startswith(ROOT+'Data/') and member!=ROOT+'Data/':

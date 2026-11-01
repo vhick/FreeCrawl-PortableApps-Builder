@@ -100,8 +100,8 @@ Icons=1
 Start=FreeCrawlPortable.exe
 '''
     (appinfo/'appinfo.ini').write_text(appinfo_ini,encoding='utf-8')
-    # Official installer replaces App/Other but NEVER wipes Data during upgrades.
-    (appinfo/'installer.ini').write_text('[CheckRunning]\nCloseEXE=FreeCrawl SEO Tool.exe\n\n[MainDirectories]\nRemoveAppDirectory=true\nRemoveOtherDirectory=true\n',encoding='utf-8')
+    # Explicit policy: replace App/Other, preserve Data on real PortableApps.com upgrades.
+    (appinfo/'installer.ini').write_text('[CheckRunning]\nCloseEXE=FreeCrawl SEO Tool.exe\n\n[MainDirectories]\nRemoveAppDirectory=true\nRemoveDataDirectory=false\nRemoveOtherDirectory=true\n',encoding='utf-8')
     (appinfo/'Launcher'/'README.txt').write_text(
         'This independent package uses a compiled native C++ launcher, NOT PortableApps.com Launcher.\n'
         'Entry point: ../../../FreeCrawlPortable.exe\n'

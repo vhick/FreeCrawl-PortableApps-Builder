@@ -1,4 +1,4 @@
-"""r6 static smoke and regression test of official-first and honest fallback behavior."""
+"""r7 static smoke and regression test of official-first and honest fallback behavior."""
 from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 source=(root/'scripts/build_installer.ps1').read_text(encoding='utf-8')
@@ -19,7 +19,7 @@ assert r'RMDir /r "$INSTDIR\FreeCrawlPortable\App"' in nsis
 assert r'RMDir /r "$INSTDIR\FreeCrawlPortable\Other"' in nsis
 assert r'RMDir /r "$INSTDIR\FreeCrawlPortable\Data"' not in nsis
 assert r'CreateDirectory "$INSTDIR\FreeCrawlPortable\Data"' in nsis
-assert "BUILDER_REV: '6'" in workflow
+assert "BUILDER_REV: '7'" in workflow
 assert "v1.1.1" in workflow
 assert 'actions/upload-artifact' not in workflow
-print('PASS: r6 official-output discovery, independently disclosed NSIS fallback, Data preservation, bounded executions')
+print('PASS: r7 official-output discovery, independently disclosed NSIS fallback, Data preservation, bounded executions')

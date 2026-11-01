@@ -18,12 +18,12 @@ concurrency:
 
 jobs:
   package:
-    name: Build, install-test, and publish ZIP + PAF
+    name: Build, validate, and publish ZIP + PAF
     runs-on: windows-2022
     timeout-minutes: 35
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILDER_REV: '6'
+      BUILDER_REV: '7'
       PLAYWRIGHT_SKIP_BROWSER_INSTALL: '1'
       BUNDLE_PLAYWRIGHT: '0'
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -65,7 +65,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Selected publisher is not PAF-capable' }
           git -C .publisher rev-parse HEAD
 
-      - name: Verify downloader selection and checksum guards (r6)
+      - name: Verify downloader selection, checksums, and PAF inspection guards (r7)
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
         run: |
@@ -75,6 +75,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer checks failed' }
           python scripts/test_locator.py
           if ($LASTEXITCODE -ne 0) { throw 'Official PAF locator tests failed' }
+          python scripts/test_paf_payload.py
+          if ($LASTEXITCODE -ne 0) { throw 'PAF payload-check regression tests failed' }
 
       - name: Acquire checksum-verified official installer before compiling
         if: steps.existing.outputs.skip_build != 'true'
@@ -164,10 +166,15 @@ jobs:
         shell: pwsh
         run: ./scripts/smoke.ps1 -ZipPath 'dist/${{ steps.source.outputs.package_name }}'
 
-      - name: Install and upgrade generated PAF in throwaway folder; preserve Data
+      # PortableApps.com PAF may intentionally refuse unattended setup unless the PA.c Platform
+      # is running. The generic NSIS /S /D flags caused a headless GUI wait in r6.
+      # Validate the real installer's compressed payload and its configured update policy
+      # without claiming that an interactive Windows installation was exercised.
+      - name: Validate generated PAF archive and embedded application (no GUI install)
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
-        run: ./scripts/verify_installer.ps1 -Installer 'dist/${{ steps.source.outputs.paf_name }}' -Version '${{ steps.source.outputs.upstream_version }}'
+        run: python scripts/verify_paf_payload.py 'dist/${{ steps.source.outputs.paf_name }}' --stage 'stage/FreeCrawlPortable'
+
 
       - name: Publisher dry-run validates BOTH real packages (no upload)
         if: steps.existing.outputs.skip_build != 'true'
@@ -178,7 +185,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r6)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r7)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'true'
@@ -192,7 +199,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r6)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r7)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'false'
