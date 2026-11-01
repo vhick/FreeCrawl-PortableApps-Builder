@@ -47,3 +47,6 @@ Snapshot reviewed: **upstream stable tag `v1.1.1`** (public release dated Octobe
 * Revision r3 retains the r2 packaging design, switches to the tagged publisher v1.1.1 by default, and downloads the official installer before compilation using verified SourceForge mirrors. The published SHA-256 remains pinned.
 
 * Revision r4 fixes installer downloader execution on Windows runners where multiple `curl.exe` applications are discoverable: it selects the Windows system executable explicitly and confirms it starts. It retains checksum verification, PAF tests, portable data protection, and publisher v1.1.1.
+
+
+r5: Bootstrapping vendor Installer .paf.exe under /S /D hung headless Windows CI on 2026-10-31. Use 7-Zip extraction of verified archive; do not modify official packager.

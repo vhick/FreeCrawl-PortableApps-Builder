@@ -20,10 +20,10 @@ jobs:
   package:
     name: Build, install-test, and publish ZIP + official PAF
     runs-on: windows-2022
-    timeout-minutes: 100
+    timeout-minutes: 35
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILDER_REV: '4'
+      BUILDER_REV: '5'
       PLAYWRIGHT_SKIP_BROWSER_INSTALL: '1'
       BUNDLE_PLAYWRIGHT: '0'
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -65,10 +65,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Selected publisher is not PAF-capable' }
           git -C .publisher rev-parse HEAD
 
-      - name: Verify downloader selection and checksum guards (r4)
+      - name: Verify downloader selection and checksum guards (r5)
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
-        run: python scripts/test_downloader_guard.py
+        run: |
+          python scripts/test_downloader_guard.py
+          if ($LASTEXITCODE -ne 0) { throw 'Downloader checks failed' }
+          python scripts/test_installer_guard.py
+          if ($LASTEXITCODE -ne 0) { throw 'Installer checks failed' }
 
       - name: Acquire checksum-verified official installer before compiling
         if: steps.existing.outputs.skip_build != 'true'
@@ -134,7 +138,7 @@ jobs:
           python scripts/package.py --version '${{ steps.source.outputs.upstream_version }}' --commit "$env:UPSTREAM_SHA" --revision $env:BUILDER_REV
           if ($LASTEXITCODE -ne 0) { throw 'ZIP packaging failed' }
 
-      - name: Build authentic PAF with checksum-verified PortableApps.com Installer
+      - name: Build authentic PAF by extracting verified official tool (no GUI bootstrap)
         if: steps.existing.outputs.skip_build != 'true'
         shell: pwsh
         run: ./scripts/build_installer.ps1 -Version '${{ steps.source.outputs.upstream_version }}' -Revision $env:BUILDER_REV
@@ -163,7 +167,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r4)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r5)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'true'
@@ -177,7 +181,7 @@ jobs:
             dist/${{ steps.source.outputs.paf_name }}
           tag: ${{ steps.source.outputs.release_tag }}
           tag-prefix: portable-
-          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r4)
+          release-title: FreeCrawl ${{ steps.source.outputs.upstream_version }} PortableApps ZIP + PAF (r5)
           keep-releases: '3'
           prune: 'false'
           dry-run: 'false'
