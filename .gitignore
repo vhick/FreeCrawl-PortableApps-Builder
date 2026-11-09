@@ -1,17 +1,6 @@
-# Never commit downloaded upstream code, compiled binaries, portable user data, or release archives.
-upstream/
-dist/
-stage/
-build/
-build-info.json
-*.zip
-*.paf.exe
-*.exe
-*.obj
-*.pdb
-*.res
-Data/
-
-.publisher/
+/work/
+/dist/
+/launcher/icon.ico
 __pycache__/
 *.pyc
+*.paf.exe
